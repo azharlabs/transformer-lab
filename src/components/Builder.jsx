@@ -6,6 +6,8 @@ import Block3D from './Block3D.jsx'
 import Palette from './Palette.jsx'
 import Inspector from './Inspector.jsx'
 import BlockDetail from './BlockDetail.jsx'
+import MobileSheet from './MobileSheet.jsx'
+import { useIsMobile } from '../lib/useIsMobile.js'
 import { useLab } from '../store.js'
 import { blockColor, blockBadge, blockCategory, CATEGORY_COLORS } from '../lib/blocks.js'
 import { BLOCK_W, BLOCK_H, BLOCK_D, STEP, yForIndex, sublabel, blockLabel, splitStack } from '../lib/layout.js'
@@ -229,13 +231,13 @@ export default function Builder() {
   const warnings = useMemo(() => validate(stack, config), [stack, config])
   const [running, setRunning] = useState(false)
   const [activeIdx, setActiveIdx] = useState(-1)
+  const isMobile = useIsMobile()
+  const [sheet, setSheet] = useState(null)
 
   const activeBlk = activeIdx >= 0 ? stack[activeIdx] : null
 
-  return (
-    <div className="workspace">
-      <Palette />
-      <div className="canvas-wrap">
+  const canvasArea = (
+    <div className="canvas-wrap">
         <Canvas camera={{ position: [7, 2, 9], fov: 45 }} dpr={[1, 2]}>
           <Scene running={running} onActive={setActiveIdx} />
         </Canvas>
@@ -283,7 +285,35 @@ export default function Builder() {
         </div>
 
         <BlockDetail />
+    </div>
+  )
+
+  if (isMobile) {
+    return (
+      <div className="m-view">
+        <div className="m-canvas">{canvasArea}</div>
+        <div className="m-tabbar">
+          <button onClick={() => setSheet('parts')}>＋ Parts</button>
+          <button onClick={() => setSheet('setup')}>⚙ Setup</button>
+        </div>
+        {sheet === 'parts' && (
+          <MobileSheet title="Parts bin — tap to add" onClose={() => setSheet(null)}>
+            <Palette />
+          </MobileSheet>
+        )}
+        {sheet === 'setup' && (
+          <MobileSheet title="Model setup &amp; save" onClose={() => setSheet(null)}>
+            <Inspector />
+          </MobileSheet>
+        )}
       </div>
+    )
+  }
+
+  return (
+    <div className="workspace">
+      <Palette />
+      {canvasArea}
       <Inspector />
     </div>
   )

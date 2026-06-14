@@ -3,6 +3,8 @@ import * as THREE from 'three'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Text, Environment } from '@react-three/drei'
 import { DEMO_TOKENS, DEMO_SRC, HEADS, attentionMatrix, rawMatrix } from '../lib/attention.js'
+import MobileSheet from './MobileSheet.jsx'
+import { useIsMobile } from '../lib/useIsMobile.js'
 
 const STEP = 0.95
 const MAXH = 2.6
@@ -514,6 +516,8 @@ export default function AttentionLab() {
   const [playing, setPlaying] = useState(true)
   const [walk, setWalk] = useState({ q: 1, tok: 'cat', phase: 'query' })
   const [capStep, setCapStep] = useState(0)
+  const [sheet, setSheet] = useState(false)
+  const isMobile = useIsMobile()
   const mode = MODES.find((m) => m.id === modeId)
   const isHeat = mode.kind === 'heat'
   const showHeads = isHeat && !mode.opts.cross
@@ -567,8 +571,7 @@ export default function AttentionLab() {
     cap = { stepNo: capStep + 1, total: arr.length, title: c.t, body: c.b, idx: capStep }
   }
 
-  return (
-    <div className="workspace">
+  const canvasArea = (
       <div className="canvas-wrap">
         <Canvas key={mode.kind} camera={{ position: cam.position, fov: 45 }} dpr={[1, 2]}>
           <color attach="background" args={['#0a0e16']} />
@@ -609,7 +612,9 @@ export default function AttentionLab() {
 
         <CaptionCard stepNo={cap.stepNo} total={cap.total} title={cap.title} body={cap.body} idx={cap.idx} playing={playing} onToggle={() => setPlaying((p) => !p)} />
       </div>
+  )
 
+  const sideContent = (
       <div className="side scrolly">
         <h3>{info.t}</h3>
         <div className="explain">{info.d}</div>
@@ -630,6 +635,28 @@ export default function AttentionLab() {
         <div className="explain" style={{ fontSize: 11.5 }}>Used in: {info.used}</div>
         <div style={{ height: 20 }} />
       </div>
+  )
+
+  if (isMobile) {
+    return (
+      <div className="m-view">
+        <div className="m-canvas">{canvasArea}</div>
+        <div className="m-tabbar">
+          <button onClick={() => setSheet(true)}>ℹ︎ Explanation &amp; steps</button>
+        </div>
+        {sheet && (
+          <MobileSheet title={info.t} onClose={() => setSheet(false)}>
+            {sideContent}
+          </MobileSheet>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="workspace">
+      {canvasArea}
+      {sideContent}
     </div>
   )
 }
